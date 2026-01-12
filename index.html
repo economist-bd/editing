@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Econ Pro Video Editor Ultimate</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=AdorshoLipi&family=Alata&family=Baloo+Da+2:wght@400;700&family=Bebas+Neue&family=Cinzel:wght@700&family=Dancing+Script:wght@700&family=Fira+Sans+Condensed:wght@400;700&family=Galada&family=Hind+Siliguri:wght@400;600&family=Lato:wght@400;700&family=Lobster&family=Montserrat:wght@400;800&family=Noto+Sans+Bengali:wght@400;700&family=Noto+Serif+Bengali:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@500&family=Playfair+Display:wght@700&family=Poppins:wght@400;700&family=Raleway:wght@400;800&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --accent: #3498db; /* নীল অ্যাকসেন্ট */
+            --text-light: #ecf0f1;
+            --control-bg: #2c2c2c;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        /* বাম পাশ - ভিডিও প্রিভিউ */
+        .preview-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: #000;
+            padding: 20px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 800px;
+            height: 450px;
+            background: #000;
+            box-shadow: 0 0 30px rgba(0,0,0,0.7);
+            overflow: hidden;
+            border: 2px solid #333;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* টেক্সট লেয়ার */
+        .overlay-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            /* ডিফল্ট ফন্ট */
+            font-family: 'Hind Siliguri', sans-serif;
+        }
+
+        .draggable-text {
+            position: absolute;
+            width: 90%; /* যাতে বেশি বড় হলে র‍্যাপ করে */
+            transition: top 0.1s ease, font-size 0.1s ease;
+        }
+
+        /* টেক্সট স্টাইল ক্লাস */
+        .main-title { font-size: 3rem; font-weight: 700; color: #fff; top: 20%; }
+        .subtitle { font-size: 2rem; font-weight: 600; color: #f1c40f; top: 40%; }
+        .description { font-size: 1.2rem; font-weight: 400; color: #bdc3c7; top: 60%; }
+
+        /* ইফেক্টস ক্লাস */
+        .effect-none { text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .effect-shadow-heavy { text-shadow: 4px 4px 0px rgba(0,0,0,1); }
+        .effect-outline { -webkit-text-stroke: 1.5px black; paint-order: stroke fill; text-shadow: none; }
+        .effect-glow-blue { text-shadow: 0 0 10px #3498db, 0 0 20px #3498db; }
+        .effect-neon { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff00de, 0 0 35px #ff00de; color: #fff !important;}
+
+        /* অ্যানিমেশন ক্লাস */
+        .fade-in { animation: fadeInAnim 1s forwards; }
+        .fade-out { animation: fadeOutAnim 1s forwards; }
+
+        @keyframes fadeInAnim { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeOutAnim { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+
+        /* ডান পাশ - এডিটিং প্যানেল */
+        .editor-panel {
+            width: 380px;
+            background-color: var(--panel-bg);
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 2px solid #333;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) var(--panel-bg);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 15px;
+        }
+
+        .control-group {
+            background: var(--control-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #3d3d3d;
+        }
+
+        .control-group h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.95rem;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: #bbb; }
+        input, select, textarea {
+            width: 100%; padding: 8px; background: #444; border: 1px solid #555;
+            color: white; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box;
+            font-family: inherit;
+        }
+        textarea { resize: vertical; height: 60px; }
+        input[type="range"] { cursor: pointer; }
+        input[type="color"] { height: 35px; padding: 2px; cursor: pointer; }
+
+        /* বাটন স্টাইল */
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .btn {
+            flex: 1; padding: 10px; background: #444; border: none; color: white;
+            cursor: pointer; font-weight: bold; border-radius: 4px; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .btn-accent { background: var(--accent); }
+        .btn:hover { filter: brightness(1.2); }
+
+        /* টাইপরাইটার কার্সার ইফেক্ট (অপশনাল) */
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="preview-section">
+        <div class="video-container" id="captureArea">
+            <video id="videoPlayer" controls>
+                <source src="" type="video/mp4">
+                ব্রাউজার ভিডিও সাপোর্ট করছে না।
+            </video>
+
+            <div class="overlay-layer" id="textLayer">
+                <div id="titleDisplay" class="draggable-text main-title typing-cursor">অর্থনীতি ১.১</div>
+                <div id="subDisplay" class="draggable-text subtitle typing-cursor">মুদ্রাস্ফীতি কী?</div>
+                <div id="descDisplay" class="draggable-text description typing-cursor">এখানে বিস্তারিত বর্ণনা লিখুন...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="editor-panel">
+        <div class="header">
+            <i class="fas fa-sliders-h fa-lg"></i>
+            <h2>Ultimate Editor</h2>
+        </div>
+
+        <div class="control-group" style="background: #3a2e2e;">
+            <h4>Global Settings</h4>
+            <label><i class="fas fa-font"></i> Select Font (20+)</label>
+            <select id="fontSelect">
+                <option value="'Hind Siliguri', sans-serif">Hind Siliguri (Bangla Default)</option>
+                <option value="'Noto Sans Bengali', sans-serif">Noto Sans Bengali</option>
+                <option value="'Noto Serif Bengali', serif">Noto Serif Bengali</option>
+                <option value="'Baloo Da 2', cursive">Baloo Da 2 (Cute)</option>
+                <option value="'AdorshoLipi', Arial, sans-serif">AdorshoLipi</option>
+                <option value="'Galada', cursive">Galada (Calligraphy)</option>
+                <option value="'Montserrat', sans-serif">Montserrat (Modern)</option>
+                <option value="'Poppins', sans-serif">Poppins (Clean)</option>
+                <option value="'Open Sans', sans-serif">Open Sans</option>
+                <option value="'Roboto Slab', serif">Roboto Slab</option>
+                <option value="'Playfair Display', serif">Playfair Display (Classic)</option>
+                <option value="'Cinzel', serif">Cinzel (Cinematic)</option>
+                <option value="'Oswald', sans-serif">Oswald (Tall)</option>
+                <option value="'Bebas Neue', cursive">Bebas Neue (Bold Caps)</option>
+                <option value="'Raleway', sans-serif">Raleway</option>
+                <option value="'Lato', sans-serif">Lato</option>
+                <option value="'Fira Sans Condensed', sans-serif">Fira Sans Condensed</option>
+                <option value="'Alata', sans-serif">Alata</option>
+                <option value="'Lobster', cursive">Lobster (Fancy)</option>
+                <option value="'Dancing Script', cursive">Dancing Script</option>
+            </select>
+
+            <label><i class="fas fa-magic"></i> Text Effect</label>
+            <select id="effectSelect">
+                <option value="effect-none">No Effect (Simple Shadow)</option>
+                <option value="effect-shadow-heavy">Heavy Drop Shadow</option>
+                <option value="effect-outline">Outline (Stroke)</option>
+                <option value="effect-glow-blue">Blue Glow</option>
+                <option value="effect-neon">Neon Pink</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label class="btn btn-accent">
+                <i class="fas fa-upload"></i> Upload Video File
+                <input type="file" id="videoUploader" accept="video/*" style="display: none;">
+            </label>
+            
+            <label style="margin-top: 15px;">Global Animations</label>
+            <div class="btn-group">
+                <button class="btn" onclick="triggerAnimation('fade-in')"><i class="fas fa-arrow-up"></i> Fade In</button>
+                <button class="btn" onclick="triggerAnimation('fade-out')"><i class="fas fa-arrow-down"></i> Fade Out</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h4><i class="fas fa-heading"></i> Main Title</h4>
+            <input type="text" id="titleInput" value="অর্থনীতি ১.১" placeholder="টাইপ করুন...">
+            <div style="display: flex; gap: 5px;">
+                <input type="range" id="titlePos" min="0" max="90" value="20" title="Position Y">
+                <input type="number" id="titleSizeNum" min="10" max="100" value="48" style="width: 60px;" title="Font Size">
+                <input type="color" id="titleColor" value="#ffffff" style="width: 50px;">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h4><i class="fas fa-subscript"></i> Subtitle</h4>
+            <input type="text" id="subInput" value="মুদ্রাস্ফীতি কী?" placeholder="টাইপ করুন...">
+             <div style="display: flex; gap: 5px;">
+                <input type="range" id="subPos" min="0" max="90" value="40">
+                <input type="number" id="subSizeNum" min="10" max="100" value="32" style="width: 60px;">
+                <input type="color" id="subColor" value="#f1c40f" style="width: 50px;">
+            </div>
+        </div>
+
+         <div class="control-group">
+            <h4><i class="fas fa-align-left"></i> Description</h4>
+            <textarea id="descInput" placeholder="টাইপরাইটার ইফেক্টে লেখা হবে...">এখানে বিস্তারিত বর্ণনা লিখুন...</textarea>
+             <div style="display: flex; gap: 5px;">
+                <input type="range" id="descPos" min="0" max="90" value="60">
+                <input type="number" id="descSizeNum" min="10" max="80" value="19" style="width: 60px;">
+                <input type="color" id="descColor" value="#bdc3c7" style="width: 50px;">
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- এলিমেন্ট সিলেক্টর ---
+        const videoUploader = document.getElementById('videoUploader');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const textLayer = document.getElementById('textLayer');
+        
+        const titleDisplay = document.getElementById('titleDisplay');
+        const subDisplay = document.getElementById('subDisplay');
+        const descDisplay = document.getElementById('descDisplay');
+
+        // --- ভিডিও আপলোড হ্যান্ডলার ---
+        videoUploader.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const fileURL = URL.createObjectURL(file);
+                videoPlayer.src = fileURL;
+                videoPlayer.play();
+            }
+        });
+
+        // --- গ্লোবাল সেটিংস হ্যান্ডলার (ফন্ট ও ইফেক্ট) ---
+        document.getElementById('fontSelect').addEventListener('change', (e) => {
+            textLayer.style.fontFamily = e.target.value;
+        });
+
+        document.getElementById('effectSelect').addEventListener('change', (e) => {
+            // আগের সব ইফেক্ট ক্লাস রিমুভ করা
+            titleDisplay.className = titleDisplay.className.replace(/effect-\S+/g, '');
+            subDisplay.className = subDisplay.className.replace(/effect-\S+/g, '');
+            descDisplay.className = descDisplay.className.replace(/effect-\S+/g, '');
+            
+            // নতুন ইফেক্ট ক্লাস যোগ করা
+            const newEffect = e.target.value;
+            titleDisplay.classList.add(newEffect);
+            subDisplay.classList.add(newEffect);
+            descDisplay.classList.add(newEffect);
+        });
+
+        // ডিফল্ট ইফেক্ট সেট করা
+        titleDisplay.classList.add('effect-none');
+        subDisplay.classList.add('effect-none');
+        descDisplay.classList.add('effect-none');
+
+
+        // --- টাইপরাইটার ইফেক্ট ফাংশন (Advanced) ---
+        // টাইমার স্টোর করার জন্য অবজেক্ট, যাতে দ্রুত টাইপ করলে সমস্যা না হয়
+        const typeTimers = {};
+
+        function typeWriter(elementId, text, speed = 50) {
+            const element = document.getElementById(elementId);
+            
+            // যদি এই এলিমেন্টে আগের কোনো টাইপরাইটার চলতে থাকে, সেটা বন্ধ করো
+            if (typeTimers[elementId]) {
+                clearTimeout(typeTimers[elementId]);
+            }
+
+            let i = 0;
+            element.innerText = ''; // লেখা ক্লিয়ার করা
+            element.classList.add('typing-cursor'); // কার্সার দেখানো
+
+            function type() {
+                if (i < text.length) {
+                    element.innerText += text.charAt(i);
+                    i++;
+                    // পরের অক্ষরের জন্য টাইমার সেট করা
+                    typeTimers[elementId] = setTimeout(type, speed);
+                } else {
+                     // লেখা শেষ হলে কিছুক্ষণ পর কার্সার সরানো (অপশনাল)
+                     // setTimeout(() => element.classList.remove('typing-cursor'), 1000);
+                }
+            }
+            type(); // টাইপিং শুরু
+        }
+
+        // --- ইনপুট হ্যান্ডলার (টাইপরাইটার সহ) ---
+        document.getElementById('titleInput').addEventListener('input', (e) => typeWriter('titleDisplay', e.target.value));
+        document.getElementById('subInput').addEventListener('input', (e) => typeWriter('subDisplay', e.target.value));
+        document.getElementById('descInput').addEventListener('input', (e) => typeWriter('descDisplay', e.target.value, 30)); // ডেসক্রিপশন একটু দ্রুত টাইপ হবে
+
+        // --- স্টাইল কন্ট্রোল হ্যান্ডলার (পজিশন, সাইজ, কালার) ---
+        function setupStyleControl(inputId, element, property, unit = '') {
+            document.getElementById(inputId).addEventListener('input', (e) => {
+                element.style[property] = e.target.value + unit;
+            });
+        }
+
+        // টাইটেল
+        setupStyleControl('titlePos', titleDisplay, 'top', '%');
+        setupStyleControl('titleSizeNum', titleDisplay, 'fontSize', 'px');
+        setupStyleControl('titleColor', titleDisplay, 'color');
+        // সাবটাইটেল
+        setupStyleControl('subPos', subDisplay, 'top', '%');
+        setupStyleControl('subSizeNum', subDisplay, 'fontSize', 'px');
+        setupStyleControl('subColor', subDisplay, 'color');
+        // ডেসক্রিপশন
+        setupStyleControl('descPos', descDisplay, 'top', '%');
+        setupStyleControl('descSizeNum', descDisplay, 'fontSize', 'px');
+        setupStyleControl('descColor', descDisplay, 'color');
+
+
+        // --- অ্যানিমেশন ট্রিগার ফাংশন ---
+        function triggerAnimation(animClass) {
+            // আগের অ্যানিমেশন ক্লাস রিমুভ করা যাতে বারবার প্লে হয়
+            textLayer.classList.remove('fade-in', 'fade-out');
+            
+            // ব্রাউজারকে ফোর্স করা স্টাইল রিক্যালকুলেট করতে (রিফ্লো)
+            void textLayer.offsetWidth; 
+            
+            // নতুন অ্যানিমেশন ক্লাস যোগ করা
+            textLayer.classList.add(animClass);
+        }
+
+        // পেজ লোড হলে একবার টাইপরাইটার ইফেক্ট চালানো
+        window.onload = () => {
+            typeWriter('titleDisplay', document.getElementById('titleInput').value);
+            typeWriter('subDisplay', document.getElementById('subInput').value);
+            typeWriter('descDisplay', document.getElementById('descInput').value, 30);
+        };
+
+    </script>
+</body>
+</html>
