@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Econ Layer Composer Pro</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=AdorshoLipi&family=Hind+Siliguri:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;700&family=Galada&family=Baloo+Da+2&family=Bebas+Neue&family=Poppins:wght@600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --panel-bg: #1e1e1e;
+            --item-bg: #2c2c2c;
+            --accent: #0984e3;
+            --text-main: #dfe6e9;
+            --border: #444;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        /* --- Left Side: Canvas/Preview --- */
+        .preview-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            padding: 20px;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            width: 854px; /* 480p standard 16:9 */
+            height: 480px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #333;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        /* Background Layer */
+        #bg-layer {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            object-fit: cover;
+            z-index: 0;
+        }
+        
+        /* Text/Overlay Container */
+        #overlay-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 10;
+            pointer-events: none; /* Allows clicking through to video controls if needed */
+        }
+
+        .layer-item-render {
+            position: absolute;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        /* Animations */
+        .anim-fade-in { animation: fadeIn 1s forwards; }
+        .anim-slide-up { animation: slideUp 0.8s forwards; }
+        .anim-typewriter { overflow: hidden; border-right: 2px solid white; white-space: nowrap; animation: typing 2s steps(40, end), blink .75s step-end infinite; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes typing { from { width: 0 } to { width: 100% } }
+        @keyframes blink { 50% { border-color: transparent } }
+
+
+        /* --- Right Side: Layer & Controls --- */
+        .control-panel {
+            width: 400px;
+            background: var(--panel-bg);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+        }
+        .tab-btn {
+            flex: 1; padding: 15px; background: transparent; border: none;
+            color: #aaa; cursor: pointer; font-weight: bold;
+        }
+        .tab-btn.active { background: var(--item-bg); color: var(--accent); border-bottom: 2px solid var(--accent); }
+
+        .panel-content {
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Layer List Styles */
+        .layer-list { list-style: none; padding: 0; margin: 0; }
+        .layer-card {
+            background: var(--item-bg);
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .layer-card.active { border-color: var(--accent); background: #333; }
+        .layer-card:hover { background: #353535; }
+
+        /* Form Inputs */
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
+        input, select, textarea {
+            width: 100%; padding: 8px; background: #222; border: 1px solid #444;
+            color: white; border-radius: 4px; box-sizing: border-box;
+        }
+        .row { display: flex; gap: 10px; }
+
+        /* Buttons */
+        .btn {
+            width: 100%; padding: 10px; border: none; border-radius: 4px;
+            cursor: pointer; font-weight: bold; margin-bottom: 10px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-success { background: #00b894; color: white; }
+        .btn-danger { background: #d63031; color: white; width: auto; padding: 5px 10px; }
+        
+        /* Recording Status */
+        #rec-indicator {
+            position: absolute; top: 20px; left: 20px; color: #ff7675; 
+            font-weight: bold; display: none; background: rgba(0,0,0,0.8); 
+            padding: 5px 10px; border-radius: 4px; z-index: 100;
+        }
+        .pulse { animation: pulse 1s infinite; }
+        @keyframes pulse { 50% { opacity: 0.5; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="preview-area">
+        <div id="rec-indicator"><i class="fas fa-circle"></i> RECORDING...</div>
+        
+        <div class="canvas-wrapper" id="canvas-area">
+            <div id="bg-container">
+                <div id="bg-placeholder" style="width:100%; height:100%; background: linear-gradient(45deg, #1e3c72, #2a5298); display:flex; align-items:center; justify-content:center; color:white; opacity:0.5;">
+                    No Background Set
+                </div>
+            </div>
+
+            <div id="overlay-container">
+                </div>
+        </div>
+
+        <div style="margin-top: 15px; display: flex; gap: 15px;">
+            <button class="btn btn-primary" style="width: 150px;" onclick="togglePlay()"><i class="fas fa-play"></i> Play Preview</button>
+            <button class="btn btn-success" style="width: 150px;" onclick="startRender()"><i class="fas fa-download"></i> Download</button>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('layers')">Layers</button>
+            <button class="tab-btn" onclick="switchTab('background')">Background</button>
+        </div>
+
+        <div id="panel-layers" class="panel-content">
+            <button class="btn btn-primary" onclick="addNewLayer()">+ Add Text Layer</button>
+            
+            <div style="height: 150px; overflow-y: auto; border: 1px solid #333; margin-bottom: 20px; border-radius: 4px;">
+                <ul class="layer-list" id="layer-list-ui">
+                    </ul>
+            </div>
+
+            <div id="layer-properties" style="display: none; border-top: 1px solid #444; padding-top: 15px;">
+                <h4 style="margin-top: 0; color: var(--accent);">Layer Properties</h4>
+                
+                <div class="input-group">
+                    <label>Text Content</label>
+                    <textarea id="prop-text" oninput="updateCurrentLayer('text', this.value)"></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label>Pos X (%)</label>
+                        <input type="number" id="prop-x" oninput="updateCurrentLayer('x', this.value)">
+                    </div>
+                    <div class="input-group">
+                        <label>Pos Y (%)</label>
+                        <input type="number" id="prop-y" oninput="updateCurrentLayer('y', this.value)">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label>Font Size (px)</label>
+                        <input type="number" id="prop-size" oninput="updateCurrentLayer('size', this.value)">
+                    </div>
+                    <div class="input-group">
+                        <label>Color</label>
+                        <input type="color" id="prop-color" style="height: 38px;" oninput="updateCurrentLayer('color', this.value)">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Font Family</label>
+                    <select id="prop-font" onchange="updateCurrentLayer('font', this.value)">
+                        <option value="'Hind Siliguri', sans-serif">Hind Siliguri</option>
+                        <option value="'AdorshoLipi', sans-serif">AdorshoLipi</option>
+                        <option value="'Baloo Da 2', cursive">Baloo Da 2</option>
+                        <option value="'Galada', cursive">Galada</option>
+                        <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Animation</label>
+                    <select id="prop-anim" onchange="updateCurrentLayer('anim', this.value)">
+                        <option value="">None</option>
+                        <option value="anim-fade-in">Fade In</option>
+                        <option value="anim-slide-up">Slide Up</option>
+                        <option value="anim-typewriter">Typewriter</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="panel-background" class="panel-content" style="display: none;">
+            <div class="input-group">
+                <label>Background Type</label>
+                <select id="bg-type" onchange="changeBgType(this.value)">
+                    <option value="gradient">Color Gradient</option>
+                    <option value="video">Video File</option>
+                    <option value="image">Image File</option>
+                </select>
+            </div>
+
+            <div id="bg-control-gradient" class="bg-control">
+                <label>Select Gradient</label>
+                <select onchange="updateGradient(this.value)">
+                    <option value="linear-gradient(45deg, #1e3c72, #2a5298)">Deep Blue</option>
+                    <option value="linear-gradient(to right, #11998e, #38ef7d)">Green Tech</option>
+                    <option value="linear-gradient(to right, #833ab4, #fd1d1d, #fcb045)">Sunset</option>
+                    <option value="#000000">Solid Black</option>
+                </select>
+            </div>
+
+            <div id="bg-control-file" class="bg-control" style="display: none;">
+                <label>Upload File</label>
+                <input type="file" id="bg-uploader" onchange="handleBgUpload(this)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- STATE MANAGEMENT ---
+        let layers = []; // Array to store layer objects
+        let activeLayerId = null;
+        let bgType = 'gradient';
+
+        // --- LAYER LOGIC ---
+        function addNewLayer() {
+            const id = Date.now();
+            const newLayer = {
+                id: id,
+                text: "নতুন লেখা...",
+                x: 50, // Percentage
+                y: 50, // Percentage
+                size: 40,
+                color: "#ffffff",
+                font: "'Hind Siliguri', sans-serif",
+                anim: ""
+            };
+            layers.push(newLayer);
+            renderLayerList();
+            renderPreview();
+            selectLayer(id);
+        }
+
+        function deleteLayer(id, event) {
+            event.stopPropagation(); // Stop click from selecting the layer
+            layers = layers.filter(l => l.id !== id);
+            if (activeLayerId === id) {
+                activeLayerId = null;
+                document.getElementById('layer-properties').style.display = 'none';
+            }
+            renderLayerList();
+            renderPreview();
+        }
+
+        function selectLayer(id) {
+            activeLayerId = id;
+            renderLayerList(); // To update active class styling
+            
+            // Populate Properties Panel
+            const layer = layers.find(l => l.id === id);
+            if (layer) {
+                document.getElementById('layer-properties').style.display = 'block';
+                document.getElementById('prop-text').value = layer.text;
+                document.getElementById('prop-x').value = layer.x;
+                document.getElementById('prop-y').value = layer.y;
+                document.getElementById('prop-size').value = layer.size;
+                document.getElementById('prop-color').value = layer.color;
+                document.getElementById('prop-font').value = layer.font;
+                document.getElementById('prop-anim').value = layer.anim;
+            }
+        }
+
+        function updateCurrentLayer(key, value) {
+            if (!activeLayerId) return;
+            const layer = layers.find(l => l.id === activeLayerId);
+            if (layer) {
+                layer[key] = value;
+                renderPreview(); // Real-time update on screen
+            }
+        }
+
+        // --- RENDERING UI ---
+        function renderLayerList() {
+            const listEl = document.getElementById('layer-list-ui');
+            listEl.innerHTML = '';
+            
+            layers.slice().reverse().forEach(layer => { // Reverse to show latest on top
+                const li = document.createElement('li');
+                li.className = `layer-card ${layer.id === activeLayerId ? 'active' : ''}`;
+                li.onclick = () => selectLayer(layer.id);
+                li.innerHTML = `
+                    <span style="font-size:0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width: 120px;">
+                        ${layer.text.substring(0, 15)}...
+                    </span>
+                    <button class="btn-danger" onclick="deleteLayer(${layer.id}, event)"><i class="fas fa-trash"></i></button>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+
+        function renderPreview() {
+            const container = document.getElementById('overlay-container');
+            container.innerHTML = ''; // Clear current
+
+            layers.forEach(layer => {
+                const el = document.createElement('div');
+                el.className = `layer-item-render ${layer.anim}`; // Apply animation class
+                el.innerText = layer.text;
+                el.style.left = layer.x + '%';
+                el.style.top = layer.y + '%';
+                el.style.transform = 'translate(-50%, -50%)'; // Center pivot
+                el.style.fontSize = layer.size + 'px';
+                el.style.color = layer.color;
+                el.style.fontFamily = layer.font;
+                
+                // If using 'slideUp', we need to manage transform carefully or use margins
+                if(layer.anim === 'anim-slide-up') {
+                   // Special handling to not conflict with translate centering
+                   // keeping simple for now
+                }
+
+                container.appendChild(el);
+            });
+        }
+
+        // --- BACKGROUND LOGIC ---
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.panel-content').forEach(p => p.style.display = 'none');
+            
+            event.target.classList.add('active');
+            document.getElementById(`panel-${tab}`).style.display = 'block';
+        }
+
+        function changeBgType(type) {
+            bgType = type;
+            const gradControls = document.getElementById('bg-control-gradient');
+            const fileControls = document.getElementById('bg-control-file');
+            
+            if (type === 'gradient') {
+                gradControls.style.display = 'block';
+                fileControls.style.display = 'none';
+                // Reset to default gradient
+                updateGradient('linear-gradient(45deg, #1e3c72, #2a5298)');
+            } else {
+                gradControls.style.display = 'none';
+                fileControls.style.display = 'block';
+                // Prompt user to upload
+                document.getElementById('bg-container').innerHTML = `
+                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#777; background:#111;">
+                        Please Upload ${type === 'video' ? 'Video' : 'Image'}
+                    </div>`;
+            }
+        }
+
+        function updateGradient(val) {
+            document.getElementById('bg-container').innerHTML = `
+                <div style="width:100%; height:100%; background: ${val};"></div>
+            `;
+        }
+
+        function handleBgUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            const container = document.getElementById('bg-container');
+            
+            if (bgType === 'video') {
+                container.innerHTML = `<video id="bg-video" src="${url}" style="width:100%; height:100%; object-fit:contain;" loop></video>`;
+            } else {
+                container.innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:contain;">`;
+            }
+        }
+
+        // --- PLAYBACK & DOWNLOAD ---
+        function togglePlay() {
+            const vid = document.getElementById('bg-video');
+            
+            // Re-trigger animations by re-rendering
+            const currentHTML = document.getElementById('overlay-container').innerHTML;
+            document.getElementById('overlay-container').innerHTML = '';
+            setTimeout(() => {
+                document.getElementById('overlay-container').innerHTML = currentHTML;
+            }, 10);
+
+            if (vid) {
+                if (vid.paused) vid.play();
+                else vid.pause();
+            }
+        }
+
+        async function startRender() {
+            const indicator = document.getElementById('rec-indicator');
+            indicator.style.display = 'block';
+            indicator.classList.add('pulse');
+
+            try {
+                // Select Screen/Tab to record
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { displaySurface: "browser" },
+                    audio: true
+                });
+
+                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+                const chunks = [];
+
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) chunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: "video/webm" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "econ_final_output.webm";
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    indicator.style.display = 'none';
+                    // Stop video if playing
+                    const vid = document.getElementById('bg-video');
+                    if(vid) vid.pause();
+                };
+
+                mediaRecorder.start();
+                
+                // Auto play if video bg
+                togglePlay();
+
+            } catch (err) {
+                console.error(err);
+                alert("Recording cancelled or failed.");
+                indicator.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
