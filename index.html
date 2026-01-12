@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Econ Pro Video Editor</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --accent: #e74c3c;
+            --text-light: #ecf0f1;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        /* বাম পাশ - ভিডিও প্রিভিউ */
+        .preview-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: #000;
+            padding: 20px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 800px;
+            height: 450px; /* 16:9 Aspect Ratio */
+            background: #000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 2px solid #333;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* ভিডিও যাতে চ্যাপ্টা না হয় */
+        }
+
+        /* টেক্সট লেয়ার (ভিডিওর ওপর ভাসবে) */
+        .overlay-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* যাতে ভিডিও ক্লিকে সমস্যা না হয় */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .main-title {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+            transition: transform 0.1s;
+            position: absolute; /* স্লাইডার দিয়ে সরানোর জন্য */
+        }
+
+        .subtitle {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #f1c40f;
+            text-shadow: 2px 2px 4px #000;
+            transition: transform 0.1s;
+            position: absolute;
+        }
+
+        /* ডান পাশ - এডিটিং প্যানেল */
+        .editor-panel {
+            width: 350px;
+            background-color: var(--panel-bg);
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 1px solid #333;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: var(--accent);
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            background: #2c2c2c;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            color: #bbb;
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            background: var(--accent);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        .btn:hover { background: #c0392b; }
+    </style>
+</head>
+<body>
+
+    <div class="preview-section">
+        <div class="video-container" id="captureArea">
+            <video id="videoPlayer" controls>
+                <source src="" type="video/mp4">
+                আপনার ব্রাউজার ভিডিও সাপোর্ট করছে না।
+            </video>
+
+            <div class="overlay-layer">
+                <div id="titleDisplay" class="main-title" style="top: 30%;">অর্থনীতি ১.১</div>
+                <div id="subDisplay" class="subtitle" style="top: 50%;">মুদ্রাস্ফীতি কী?</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="editor-panel">
+        <div class="header">
+            <i class="fas fa-video fa-lg"></i>
+            <h2>Video Editor Pro</h2>
+        </div>
+
+        <div class="control-group">
+            <label>Upload Video</label>
+            <input type="file" id="videoUploader" accept="video/*">
+        </div>
+
+        <div class="control-group">
+            <h4>Main Title</h4>
+            <input type="text" id="titleInput" value="অর্থনীতি ১.১">
+            
+            <label>Vertical Position (উপরে-নিচে)</label>
+            <input type="range" id="titlePos" min="0" max="90" value="30">
+            
+            <label>Font Size</label>
+            <input type="range" id="titleSize" min="20" max="80" value="48">
+            
+            <label>Color</label>
+            <input type="color" id="titleColor" value="#ffffff" style="width:100%; height:30px;">
+        </div>
+
+        <div class="control-group">
+            <h4>Subtitle</h4>
+            <input type="text" id="subInput" value="মুদ্রাস্ফীতি কী?">
+            
+            <label>Vertical Position (উপরে-নিচে)</label>
+            <input type="range" id="subPos" min="0" max="90" value="50">
+            
+            <label>Font Size</label>
+            <input type="range" id="subSize" min="15" max="60" value="32">
+            
+            <label>Color</label>
+            <input type="color" id="subColor" value="#f1c40f" style="width:100%; height:30px;">
+        </div>
+        
+        <div class="control-group">
+            <p style="font-size: 0.8rem; color: #888;">
+                * টিপস: পজিশন স্লাইডার ব্যবহার করে লেখা ভিডিওর কালো বর্ডারের বাইরে যাওয়া থেকে রক্ষা করুন।
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // ভিডিও আপলোড ফাংশন
+        const videoUploader = document.getElementById('videoUploader');
+        const videoPlayer = document.getElementById('videoPlayer');
+
+        videoUploader.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const fileURL = URL.createObjectURL(file);
+                videoPlayer.src = fileURL;
+                videoPlayer.play();
+            }
+        });
+
+        // টাইটেল কন্ট্রোল
+        const titleDisplay = document.getElementById('titleDisplay');
+        const titleInput = document.getElementById('titleInput');
+        const titlePos = document.getElementById('titlePos');
+        const titleSize = document.getElementById('titleSize');
+        const titleColor = document.getElementById('titleColor');
+
+        titleInput.addEventListener('input', (e) => titleDisplay.innerText = e.target.value);
+        
+        // পজিশন ফিক্স (শতাংশ হিসেবে, যাতে স্ক্রিন ছোট বড় হলেও ঠিক থাকে)
+        titlePos.addEventListener('input', (e) => titleDisplay.style.top = e.target.value + '%');
+        
+        titleSize.addEventListener('input', (e) => titleDisplay.style.fontSize = e.target.value + 'px');
+        titleColor.addEventListener('input', (e) => titleDisplay.style.color = e.target.value);
+
+        // সাবটাইটেল কন্ট্রোল
+        const subDisplay = document.getElementById('subDisplay');
+        const subInput = document.getElementById('subInput');
+        const subPos = document.getElementById('subPos');
+        const subSize = document.getElementById('subSize');
+        const subColor = document.getElementById('subColor');
+
+        subInput.addEventListener('input', (e) => subDisplay.innerText = e.target.value);
+        
+        // পজিশন ফিক্স (শতাংশ হিসেবে)
+        subPos.addEventListener('input', (e) => subDisplay.style.top = e.target.value + '%');
+        
+        subSize.addEventListener('input', (e) => subDisplay.style.fontSize = e.target.value + 'px');
+        subColor.addEventListener('input', (e) => subDisplay.style.color = e.target.value);
+
+    </script>
+</body>
+</html>
