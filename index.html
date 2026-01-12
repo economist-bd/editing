@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Econ Pro Ultimate Studio</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=AdorshoLipi&family=Alata&family=Baloo+Da+2:wght@400;700&family=Bebas+Neue&family=Cinzel:wght@700&family=Dancing+Script:wght@700&family=Fira+Sans+Condensed:wght@400;700&family=Galada&family=Hind+Siliguri:wght@400;600&family=Lato:wght@400;700&family=Lobster&family=Montserrat:wght@400;800&family=Noto+Sans+Bengali:wght@400;700&family=Noto+Serif+Bengali:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@500&family=Playfair+Display:wght@700&family=Poppins:wght@400;700&family=Raleway:wght@400;800&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --accent: #e74c3c; /* Red for Recording vibe */
+            --text-light: #ecf0f1;
+            --control-bg: #2c2c2c;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        /* --- Preview Section --- */
+        .preview-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            padding: 20px;
+            flex-direction: column;
+        }
+
+        .video-wrapper {
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.7);
+            border: 2px solid #333;
+            /* Aspect Ratio 16:9 for recording */
+            width: 854px; 
+            height: 480px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* Overlay Text Layer */
+        .overlay-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            font-family: 'Hind Siliguri', sans-serif;
+        }
+
+        .draggable-text {
+            position: absolute;
+            width: 100%;
+            transition: top 0.1s ease, font-size 0.1s ease;
+        }
+
+        /* Styles & Effects */
+        .main-title { font-size: 3rem; font-weight: 700; color: #fff; top: 20%; }
+        .subtitle { font-size: 2rem; font-weight: 600; color: #f1c40f; top: 40%; }
+        .description { font-size: 1.2rem; font-weight: 400; color: #bdc3c7; top: 60%; }
+
+        .effect-none { text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .effect-shadow-heavy { text-shadow: 4px 4px 0px rgba(0,0,0,1); }
+        .effect-outline { -webkit-text-stroke: 1.5px black; paint-order: stroke fill; text-shadow: none; }
+        .effect-glow-blue { text-shadow: 0 0 10px #3498db, 0 0 20px #3498db; }
+        .effect-neon { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff00de, 0 0 35px #ff00de; color: #fff !important;}
+
+        /* Animations */
+        .fade-in { animation: fadeInAnim 1s forwards; }
+        .fade-out { animation: fadeOutAnim 1s forwards; }
+        @keyframes fadeInAnim { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeOutAnim { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+
+        /* --- Editor Panel --- */
+        .editor-panel {
+            width: 360px;
+            background-color: var(--panel-bg);
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 2px solid #333;
+        }
+
+        .header {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+            color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 15px;
+        }
+
+        .control-group {
+            background: var(--control-bg); padding: 15px; border-radius: 8px;
+            margin-bottom: 15px; border: 1px solid #3d3d3d;
+        }
+        .control-group h4 { margin: 0 0 10px 0; font-size: 0.9rem; color: #aaa; text-transform: uppercase; }
+
+        label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: #bbb; }
+        input, select, textarea {
+            width: 100%; padding: 8px; background: #444; border: 1px solid #555;
+            color: white; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box;
+        }
+        input[type="range"] { margin-bottom: 5px; }
+        textarea { height: 50px; resize: vertical; }
+
+        /* Buttons */
+        .btn {
+            width: 100%; padding: 12px; border: none; color: white; cursor: pointer;
+            font-weight: bold; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-top: 5px; font-size: 1rem;
+        }
+        .btn-blue { background: #3498db; }
+        .btn-red { background: #e74c3c; animation: pulse 2s infinite; }
+        .btn-green { background: #27ae60; }
+        .btn:hover { filter: brightness(1.1); }
+        .btn:disabled { background: #555; cursor: not-allowed; animation: none; }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
+
+        /* Recording Indicator */
+        #recStatus {
+            color: #e74c3c; font-weight: bold; margin-top: 10px; display: none;
+        }
+        .blinking { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+
+        /* Typing Cursor */
+        .typing-cursor::after { content: '|'; animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="preview-section">
+        <div class="video-wrapper" id="captureArea">
+            <video id="videoPlayer" controls playsinline>
+                <source src="" type="video/mp4">
+            </video>
+            <div class="overlay-layer" id="textLayer">
+                <div id="titleDisplay" class="draggable-text main-title typing-cursor">অর্থনীতি ১.১</div>
+                <div id="subDisplay" class="draggable-text subtitle typing-cursor">মুদ্রাস্ফীতি কী?</div>
+                <div id="descDisplay" class="draggable-text description typing-cursor">বিস্তারিত এখানে...</div>
+            </div>
+        </div>
+        <div id="recStatus"><i class="fas fa-circle"></i> RECORDING IN PROGRESS...</div>
+    </div>
+
+    <div class="editor-panel">
+        <div class="header">
+            <i class="fas fa-film fa-lg"></i>
+            <h2>Econ Studio Pro</h2>
+        </div>
+
+        <div class="control-group" style="border-color: #e74c3c;">
+            <h4 style="color: #e74c3c;">Recording Studio</h4>
+            <p style="font-size: 0.75rem; color: #ccc; margin-bottom: 10px;">
+                ১. ভিডিও লোড করুন।<br>
+                ২. 'Start Recording' চাপুন এবং স্ক্রিন শেয়ার থেকে এই ট্যাবটি সিলেক্ট করুন।<br>
+                ৩. ভিডিও প্লে করুন। শেষ হলে 'Stop' চাপুন।
+            </p>
+            <button id="btnStartRec" class="btn btn-red" onclick="startRecording()">
+                <i class="fas fa-video"></i> Start Recording
+            </button>
+            <button id="btnStopRec" class="btn btn-green" onclick="stopRecording()" disabled>
+                <i class="fas fa-save"></i> Stop & Save Video
+            </button>
+        </div>
+
+        <div class="control-group">
+            <label class="btn btn-blue">
+                <i class="fas fa-upload"></i> Upload Video File
+                <input type="file" id="videoUploader" accept="video/*" style="display: none;">
+            </label>
+        </div>
+
+        <div class="control-group">
+            <h4>Live Animations</h4>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-blue" onclick="triggerAnimation('fade-in')" style="margin:0"><i class="fas fa-arrow-up"></i> In</button>
+                <button class="btn btn-blue" onclick="triggerAnimation('fade-out')" style="margin:0"><i class="fas fa-arrow-down"></i> Out</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Select Font</label>
+            <select id="fontSelect">
+                <option value="'Hind Siliguri', sans-serif">Hind Siliguri</option>
+                <option value="'Noto Sans Bengali', sans-serif">Noto Sans Bengali</option>
+                <option value="'AdorshoLipi', sans-serif">AdorshoLipi</option>
+                <option value="'Galada', cursive">Galada</option>
+                <option value="'Cinzel', serif">Cinzel</option>
+                <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                </select>
+            
+            <label>Effect</label>
+            <select id="effectSelect">
+                <option value="effect-none">No Effect</option>
+                <option value="effect-shadow-heavy">Heavy Shadow</option>
+                <option value="effect-outline">Outline</option>
+                <option value="effect-glow-blue">Blue Glow</option>
+                <option value="effect-neon">Neon</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <h4>Title</h4>
+            <input type="text" id="titleInput" value="অর্থনীতি ১.১">
+            <div style="display: flex; gap: 5px;">
+                <input type="range" id="titlePos" min="0" max="90" value="20">
+                <input type="color" id="titleColor" value="#ffffff" style="width: 40px;">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h4>Subtitle</h4>
+            <input type="text" id="subInput" value="মুদ্রাস্ফীতি কী?">
+             <div style="display: flex; gap: 5px;">
+                <input type="range" id="subPos" min="0" max="90" value="40">
+                <input type="color" id="subColor" value="#f1c40f" style="width: 40px;">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h4>Description</h4>
+            <textarea id="descInput">বিস্তারিত এখানে...</textarea>
+             <div style="display: flex; gap: 5px;">
+                <input type="range" id="descPos" min="0" max="90" value="60">
+                <input type="color" id="descColor" value="#bdc3c7" style="width: 40px;">
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Elements ---
+        const videoPlayer = document.getElementById('videoPlayer');
+        const textLayer = document.getElementById('textLayer');
+        const titleDisplay = document.getElementById('titleDisplay');
+        const subDisplay = document.getElementById('subDisplay');
+        const descDisplay = document.getElementById('descDisplay');
+
+        // --- Video Upload ---
+        document.getElementById('videoUploader').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                videoPlayer.src = URL.createObjectURL(file);
+                videoPlayer.play();
+            }
+        });
+
+        // --- Live Typing ---
+        const typeTimers = {};
+        function typeWriter(id, text, speed = 50) {
+            const el = document.getElementById(id);
+            if (typeTimers[id]) clearTimeout(typeTimers[id]);
+            let i = 0; el.innerText = ''; el.classList.add('typing-cursor');
+            function type() {
+                if (i < text.length) {
+                    el.innerText += text.charAt(i); i++;
+                    typeTimers[id] = setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        ['title','sub','desc'].forEach(key => {
+            document.getElementById(key+'Input').addEventListener('input', (e) => typeWriter(key+'Display', e.target.value));
+        });
+
+        // --- Styling ---
+        function setStyle(id, el, prop, unit='') {
+            document.getElementById(id).addEventListener('input', e => el.style[prop] = e.target.value + unit);
+        }
+        setStyle('titlePos', titleDisplay, 'top', '%');
+        setStyle('subPos', subDisplay, 'top', '%');
+        setStyle('descPos', descDisplay, 'top', '%');
+        
+        setStyle('titleColor', titleDisplay, 'color');
+        setStyle('subColor', subDisplay, 'color');
+        setStyle('descColor', descDisplay, 'color');
+
+        document.getElementById('fontSelect').addEventListener('change', e => textLayer.style.fontFamily = e.target.value);
+        document.getElementById('effectSelect').addEventListener('change', e => {
+            [titleDisplay, subDisplay, descDisplay].forEach(el => {
+                el.className = el.className.replace(/effect-\S+/g, '');
+                el.classList.add(e.target.value);
+            });
+        });
+
+        // --- Animations ---
+        window.triggerAnimation = (cls) => {
+            textLayer.classList.remove('fade-in', 'fade-out');
+            void textLayer.offsetWidth;
+            textLayer.classList.add(cls);
+        };
+
+        // --- RECORDING FUNCTIONALITY (The Remotion-like Feature) ---
+        let mediaRecorder;
+        let recordedChunks = [];
+        const btnStart = document.getElementById('btnStartRec');
+        const btnStop = document.getElementById('btnStopRec');
+        const recStatus = document.getElementById('recStatus');
+
+        async function startRecording() {
+            try {
+                // Ask user to select the specific tab/screen to record
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { mediaSource: "screen" },
+                    audio: true
+                });
+
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = function(e) {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = function() {
+                    const blob = new Blob(recordedChunks, { type: "video/webm" });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Trigger download
+                    const a = document.createElement("a");
+                    a.style.display = "none";
+                    a.href = url;
+                    a.download = "econ_lecture_video.webm";
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // Reset
+                    window.URL.revokeObjectURL(url);
+                    recordedChunks = [];
+                    btnStart.disabled = false;
+                    btnStop.disabled = true;
+                    recStatus.style.display = "none";
+                    recStatus.classList.remove('blinking');
+                };
+
+                mediaRecorder.start();
+                
+                // UI Update
+                btnStart.disabled = true;
+                btnStop.disabled = false;
+                recStatus.style.display = "block";
+                recStatus.classList.add('blinking');
+                
+                // Auto-play video when recording starts (Optional)
+                videoPlayer.play();
+
+            } catch (err) {
+                console.error("Error: " + err);
+                alert("রেকর্ডিং শুরু করা যায়নি। পারমিশন দিন।");
+            }
+        }
+
+        function stopRecording() {
+            if(mediaRecorder) {
+                mediaRecorder.stop();
+                // Stop all tracks to clear the 'sharing' indicator
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+        
+        // Initial Typewriter
+        window.onload = () => {
+            typeWriter('titleDisplay', document.getElementById('titleInput').value);
+            typeWriter('subDisplay', document.getElementById('subInput').value);
+        };
+
+    </script>
+</body>
+</html>
