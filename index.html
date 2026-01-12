@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Econ Studio Pro Max</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=AdorshoLipi&family=Alata&family=Baloo+Da+2:wght@400;700&family=Bebas+Neue&family=Cinzel:wght@700&family=Galada&family=Hind+Siliguri:wght@400;600&family=Lato:wght@400;700&family=Montserrat:wght@400;800&family=Noto+Sans+Bengali:wght@400;700&family=Noto+Serif+Bengali:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@500&family=Playfair+Display:wght@700&family=Poppins:wght@400;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-bg: #252525;
+            --accent: #00d2d3; /* Cyan Accent */
+            --text-light: #ecf0f1;
+            --danger: #ff6b6b;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        /* --- বাম পাশ: ক্যানভাস এরিয়া (বড় করা হয়েছে) --- */
+        .preview-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            padding: 10px;
+            position: relative;
+        }
+
+        .video-wrapper {
+            position: relative;
+            /* স্ক্রিন অনুযায়ী সাইজ হবে */
+            width: 95%; 
+            max-width: 1400px;
+            aspect-ratio: 16/9;
+            background: #000;
+            border: 2px solid #333;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            overflow: hidden;
+            user-select: none; /* ড্র্যাগ করার সময় টেক্সট সিলেক্ট না হওয়ার জন্য */
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none; /* ভিডিওর ওপর ক্লিক যাতে ড্র্যাগে বাধা না দেয় */
+        }
+
+        /* টেক্সট লেয়ার */
+        .overlay-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        /* ড্র্যাগেবল টেক্সট স্টাইল */
+        .draggable-item {
+            position: absolute;
+            cursor: move;
+            padding: 5px 10px;
+            border: 1px solid transparent;
+            transition: transform 0.1s, opacity 0.3s;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .draggable-item:hover {
+            border: 1px dashed rgba(255,255,255,0.3);
+        }
+
+        .draggable-item.active {
+            border: 1px solid var(--accent);
+            background: rgba(0, 210, 211, 0.1);
+        }
+
+        /* এনিমেশন ক্লাসসমূহ */
+        .anim-fade-in { animation: fadeIn 0.8s forwards; }
+        .anim-fade-out { animation: fadeOut 0.8s forwards; }
+        .anim-slide-left { animation: slideLeft 0.8s forwards; }
+        .anim-slide-right { animation: slideRight 0.8s forwards; }
+        .anim-zoom-in { animation: zoomIn 0.8s forwards; }
+        .anim-typewriter {
+            overflow: hidden;
+            border-right: .15em solid var(--accent);
+            white-space: nowrap;
+            animation: typing 2s steps(40, end), blink-caret .75s step-end infinite;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes slideLeft { from { transform: translateX(-100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideRight { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes typing { from { width: 0 } to { width: 100% } }
+        @keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: var(--accent); } }
+
+
+        /* --- ডান পাশ: কন্ট্রোল প্যানেল --- */
+        .editor-panel {
+            width: 350px;
+            background-color: var(--panel-bg);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #333;
+            z-index: 10;
+        }
+
+        .panel-content {
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .control-group {
+            background: #333;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .control-group h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.85rem;
+            color: #aaa;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        input, select, textarea {
+            width: 100%; padding: 8px; background: #222; border: 1px solid #444;
+            color: white; border-radius: 4px; margin-bottom: 8px; box-sizing: border-box;
+        }
+
+        .btn {
+            width: 100%; padding: 10px; border: none; color: white; cursor: pointer;
+            font-weight: bold; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: 0.2s;
+        }
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-danger { background: var(--danger); }
+        .btn-dark { background: #444; }
+        .btn:hover { opacity: 0.9; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+
+        /* রেকর্ডিং স্ট্যাটাস */
+        #recStatus {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(0,0,0,0.7); color: var(--danger);
+            padding: 5px 15px; border-radius: 20px; font-weight: bold;
+            display: none; border: 1px solid var(--danger);
+        }
+        .blinking { animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="preview-section">
+        <div id="recStatus"><i class="fas fa-circle"></i> REC</div>
+        
+        <div class="video-wrapper" id="captureArea">
+            <video id="videoPlayer" playsinline>
+                <source src="" type="video/mp4">
+            </video>
+            
+            <div class="overlay-layer" id="overlayLayer">
+                <div class="draggable-item active" id="text-1" style="top: 20%; left: 35%; font-size: 40px; color: white; font-weight: bold; font-family: 'Hind Siliguri';">
+                    অর্থনীতি ১.১
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="editor-panel">
+        <div style="padding: 15px; border-bottom: 1px solid #444;">
+            <h2 style="margin:0; color: var(--accent);"><i class="fas fa-edit"></i> Econ Studio</h2>
+        </div>
+
+        <div class="panel-content">
+            <div class="control-group">
+                <h4>Project Files</h4>
+                <label class="btn btn-dark" style="margin-bottom: 5px;">
+                    <i class="fas fa-upload"></i> Load Video
+                    <input type="file" id="videoUploader" accept="video/*" style="display: none;">
+                </label>
+                <div class="grid-2">
+                    <button class="btn btn-danger" onclick="startRecording()" id="btnStart"><i class="fas fa-video"></i> Record</button>
+                    <button class="btn btn-primary" onclick="stopRecording()" id="btnStop" disabled><i class="fas fa-save"></i> Save</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h4>
+                    Selected Text
+                    <button onclick="addText()" style="background:none; border:none; color:var(--accent); cursor:pointer;">+ Add New</button>
+                </h4>
+                
+                <textarea id="textContent" placeholder="Select a text to edit...">অর্থনীতি ১.১</textarea>
+                
+                <div class="grid-2">
+                    <input type="number" id="textSize" value="40" title="Font Size (px)">
+                    <input type="color" id="textColor" value="#ffffff" style="height: 35px; padding: 0;">
+                </div>
+
+                <select id="fontFamily">
+                    <option value="'Hind Siliguri', sans-serif">Hind Siliguri</option>
+                    <option value="'AdorshoLipi', sans-serif">AdorshoLipi</option>
+                    <option value="'Baloo Da 2', cursive">Baloo Da 2</option>
+                    <option value="'Galada', cursive">Galada</option>
+                    <option value="'Noto Serif Bengali', serif">Noto Serif</option>
+                    <option value="'Bebas Neue', cursive">Bebas Neue (English)</option>
+                </select>
+
+                <div class="grid-2" style="margin-top: 5px;">
+                    <button class="btn btn-dark" style="color: #ff6b6b;" onclick="deleteSelected()"><i class="fas fa-trash"></i> Delete</button>
+                    <button class="btn btn-dark" onclick="duplicateSelected()"><i class="fas fa-copy"></i> Copy</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h4>Animation (On Selected)</h4>
+                <div class="grid-2" style="margin-bottom: 5px;">
+                    <button class="btn btn-dark" onclick="applyAnim('anim-fade-in')">Fade In</button>
+                    <button class="btn btn-dark" onclick="applyAnim('anim-fade-out')">Fade Out</button>
+                </div>
+                <div class="grid-2" style="margin-bottom: 5px;">
+                    <button class="btn btn-dark" onclick="applyAnim('anim-slide-left')">Slide L</button>
+                    <button class="btn btn-dark" onclick="applyAnim('anim-slide-right')">Slide R</button>
+                </div>
+                <div class="grid-2">
+                    <button class="btn btn-dark" onclick="applyAnim('anim-zoom-in')">Zoom In</button>
+                    <button class="btn btn-dark" onclick="applyAnim('anim-typewriter')">Typewriter</button>
+                </div>
+                <button class="btn btn-dark" style="margin-top: 5px; font-size: 0.8rem;" onclick="removeAnim()">Clear Animation</button>
+            </div>
+            
+            <div style="font-size: 0.8rem; color: #888; text-align: center;">
+                * টিপস: ভিডিওর ওপর টেক্সট মাউস দিয়ে টেনে সরাতে পারবেন।
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- গ্লোবাল ভেরিয়েবল ---
+        const videoPlayer = document.getElementById('videoPlayer');
+        const overlayLayer = document.getElementById('overlayLayer');
+        let selectedElement = document.getElementById('text-1'); // ডিফল্ট সিলেকশন
+
+        // --- ভিডিও আপলোড ---
+        document.getElementById('videoUploader').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                videoPlayer.src = URL.createObjectURL(file);
+                videoPlayer.play();
+            }
+        });
+
+        // --- ড্র্যাগ এন্ড ড্রপ সিস্টেম (কোর ফিচার) ---
+        let isDragging = false;
+        let startX, startY, startLeft, startTop;
+
+        // মাউস ইভেন্ট লিসেনার পুরো কন্টেইনারে
+        overlayLayer.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('draggable-item')) {
+                isDragging = true;
+                selectText(e.target); // ক্লিক করলেই সিলেক্ট হবে
+                
+                // মাউস পজিশন
+                startX = e.clientX;
+                startY = e.clientY;
+
+                // এলিমেন্টের বর্তমান পজিশন
+                startLeft = e.target.offsetLeft;
+                startTop = e.target.offsetTop;
+                
+                e.preventDefault(); // টেক্সট সিলেকশন বন্ধ করতে
+            }
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (isDragging && selectedElement) {
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                // পার্সেন্টেজ কনভার্শন (যাতে স্ক্রিন ছোট-বড় হলে ঠিক থাকে)
+                const containerRect = overlayLayer.getBoundingClientRect();
+                
+                let newLeft = startLeft + dx;
+                let newTop = startTop + dy;
+
+                // বাউন্ডারি চেক (যাতে বাইরে না যায়) - ঐচ্ছিক
+                // newLeft = Math.max(0, Math.min(newLeft, containerRect.width - selectedElement.offsetWidth));
+                // newTop = Math.max(0, Math.min(newTop, containerRect.height - selectedElement.offsetHeight));
+
+                selectedElement.style.left = newLeft + 'px';
+                selectedElement.style.top = newTop + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => { isDragging = false; });
+
+
+        // --- টেক্সট সিলেকশন ও এডিটিং ---
+        function selectText(element) {
+            // আগের সিলেকশন রিমুভ
+            if (selectedElement) selectedElement.classList.remove('active');
+            
+            // নতুন সিলেকশন
+            selectedElement = element;
+            selectedElement.classList.add('active');
+
+            // ইনপুট ফিল্ড আপডেট
+            document.getElementById('textContent').value = selectedElement.innerText;
+            document.getElementById('textSize').value = parseInt(window.getComputedStyle(selectedElement).fontSize);
+            // কালার হেক্স কনভার্শন একটু জটিল হতে পারে, তাই সিম্পল রাখা হলো
+            
+            // ফন্ট সিলেক্ট আপডেট
+            let currentFont = selectedElement.style.fontFamily;
+            // (অপশনাল: ড্রপডাউন ম্যাচ করানো)
+        }
+
+        // ইনপুট থেকে লাইভ আপডেট
+        document.getElementById('textContent').addEventListener('input', (e) => {
+            if(selectedElement) selectedElement.innerText = e.target.value;
+        });
+
+        document.getElementById('textSize').addEventListener('input', (e) => {
+            if(selectedElement) selectedElement.style.fontSize = e.target.value + 'px';
+        });
+
+        document.getElementById('textColor').addEventListener('input', (e) => {
+            if(selectedElement) selectedElement.style.color = e.target.value;
+        });
+
+        document.getElementById('fontFamily').addEventListener('change', (e) => {
+            if(selectedElement) selectedElement.style.fontFamily = e.target.value;
+        });
+
+
+        // --- নতুন টেক্সট যোগ করা ---
+        function addText() {
+            const div = document.createElement('div');
+            div.className = 'draggable-item';
+            div.innerText = 'নতুন লেখা';
+            div.style.top = '50%';
+            div.style.left = '50%';
+            div.style.fontSize = '30px';
+            div.style.color = 'white';
+            div.style.fontFamily = "'Hind Siliguri', sans-serif";
+            
+            overlayLayer.appendChild(div);
+            selectText(div);
+        }
+
+        function deleteSelected() {
+            if(selectedElement) {
+                selectedElement.remove();
+                selectedElement = null;
+                document.getElementById('textContent').value = '';
+            }
+        }
+
+        function duplicateSelected() {
+            if(selectedElement) {
+                const clone = selectedElement.cloneNode(true);
+                clone.style.top = (parseInt(clone.style.top) + 20) + 'px'; // একটু নিচে পেস্ট হবে
+                clone.style.left = (parseInt(clone.style.left) + 20) + 'px';
+                overlayLayer.appendChild(clone);
+                selectText(clone);
+            }
+        }
+
+
+        // --- এনিমেশন সিস্টেম ---
+        function applyAnim(animName) {
+            if(!selectedElement) return;
+            
+            // রিসেট এনিমেশন (যাতে বারবার প্লে হয়)
+            selectedElement.style.animation = 'none';
+            selectedElement.offsetHeight; /* trigger reflow */
+            selectedElement.style.animation = null; 
+            
+            // আগের ক্লাস রিমুভ
+            selectedElement.classList.remove('anim-fade-in', 'anim-fade-out', 'anim-slide-left', 'anim-slide-right', 'anim-zoom-in', 'anim-typewriter');
+            
+            // নতুন ক্লাস অ্যাড
+            selectedElement.classList.add(animName);
+        }
+
+        function removeAnim() {
+            if(selectedElement) {
+                selectedElement.classList.remove('anim-fade-in', 'anim-fade-out', 'anim-slide-left', 'anim-slide-right', 'anim-zoom-in', 'anim-typewriter');
+                selectedElement.style.animation = 'none';
+            }
+        }
+
+
+        // --- রেকর্ডিং ফাংশনালিটি (MediaRecorder) ---
+        let mediaRecorder;
+        let recordedChunks = [];
+        const btnStart = document.getElementById('btnStart');
+        const btnStop = document.getElementById('btnStop');
+        const recStatus = document.getElementById('recStatus');
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { displaySurface: "browser" }, 
+                    audio: true
+                });
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: "video/webm" });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "econ_video_output.webm";
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    recordedChunks = [];
+                    btnStart.disabled = false;
+                    btnStop.disabled = true;
+                    recStatus.style.display = 'none';
+                };
+
+                mediaRecorder.start();
+                btnStart.disabled = true;
+                btnStop.disabled = false;
+                recStatus.style.display = 'block';
+                recStatus.classList.add('blinking');
+                
+                // ভিডিও প্লে শুরু
+                videoPlayer.play();
+
+            } catch (err) {
+                console.error("Error:", err);
+                alert("রেকর্ডিং পারমিশন দেওয়া হয়নি।");
+            }
+        }
+
+        function stopRecording() {
+            if(mediaRecorder) {
+                mediaRecorder.stop();
+                videoPlayer.pause();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        // ইনিশিয়াল সিলেক্ট
+        selectText(document.getElementById('text-1'));
+
+    </script>
+</body>
+</html>
